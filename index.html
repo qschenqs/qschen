@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日期计算器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+            background: linear-gradient(135deg, 
+                #ff0000 0%,
+                #ff7f00 16.67%,
+                #ffff00 33.33%,
+                #00ff00 50%,
+                #0000ff 66.67%,
+                #8b00ff 83.33%,
+                #ff0000 100%);
+            min-height: 100vh;
+            padding: 20px;
+            animation: rainbow-shift 10s ease infinite;
+            background-size: 200% 200%;
+        }
+
+        @keyframes rainbow-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background: #f9f9f9;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 15px;
+            color: white;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-title {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .result-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .result-details {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .quick-btn {
+            padding: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .quick-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .info-box {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 28px;
+            }
+            
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 日期计算器</h1>
+            <p>计算日期差、推算未来日期、倒计时等</p>
+        </div>
+
+        <div class="calculator-grid">
+            <!-- 计算两个日期之间的差值 -->
+            <div class="card">
+                <h2>📊 计算日期差</h2>
+                <div class="input-group">
+                    <label>开始日期</label>
+                    <input type="date" id="diff-start" />
+                </div>
+                <div class="input-group">
+                    <label>结束日期</label>
+                    <input type="date" id="diff-end" />
+                </div>
+                <button class="btn" onclick="calculateDifference()">计算差值</button>
+                <div class="result" id="diff-result">
+                    <div class="result-title">日期差</div>
+                    <div class="result-value" id="diff-value">0 天</div>
+                    <div class="result-details" id="diff-details"></div>
+                </div>
+                <div class="quick-actions">
+                    <button class="quick-btn" onclick="setToday('diff-start')">今天</button>
+                    <button class="quick-btn" onclick="setTomorrow('diff-end')">明天</button>
+                </div>
+            </div>
+
+            <!-- 日期加减 -->
+            <div class="card">
+                <h2>➕ 日期加减</h2>
+                <div class="input-group">
+                    <label>起始日期</label>
+                    <input type="date" id="add-start" />
+                </div>
+                <div class="input-group">
+                    <label>操作</label>
+                    <select id="add-operation">
+                        <option value="add">加上</option>
+                        <option value="subtract">减去</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>数量</label>
+                    <input type="number" id="add-number" value="1" min="0" />
+                </div>
+                <div class="input-group">
+                    <label>单位</label>
+                    <select id="add-unit">
+                        <option value="days">天</option>
+                        <option value="weeks">周</option>
+                        <option value="months">月</option>
+                        <option value="years">年</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="calculateAddSubtract()">计算结果</button>
+                <div class="result" id="add-result">
+                    <div class="result-title">计算结果</div>
+                    <div class="result-value" id="add-value">2025-01-01</div>
+                    <div class="result-details" id="add-details"></div>
+                </div>
+                <div class="quick-actions">
+                    <button class="quick-btn" onclick="setToday('add-start')">今天</button>
+                    <button class="quick-btn" onclick="quickAdd(7, 'days')">+7天</button>
+                </div>
+            </div>
+
+            <!-- 特殊日期计算 -->
+            <div class="card">
+                <h2>🎯 特殊日期</h2>
+                <div class="input-group">
+                    <label>参考日期</label>
+                    <input type="date" id="special-date" />
+                </div>
+                <div class="quick-actions">
+                    <button class="quick-btn" onclick="calculateAge()">计算年龄</button>
+                    <button class="quick-btn" onclick="daysUntilBirthday()">距离生日</button>
+                    <button class="quick-btn" onclick="daysInYear()">今年第几天</button>
+                    <button class="quick-btn" onclick="weekNumber()">第几周</button>
+                </div>
+                <div class="result" id="special-result">
+                    <div class="result-title">计算结果</div>
+                    <div class="result-value" id="special-value">--</div>
+                    <div class="result-details" id="special-details"></div>
+                </div>
+                <div class="info-box">
+                    💡 提示: 选择日期后点击按钮进行计算
+                </div>
+            </div>
+
+            <!-- 工作日计算 -->
+            <div class="card">
+                <h2>💼 工作日计算</h2>
+                <div class="input-group">
+                    <label>开始日期</label>
+                    <input type="date" id="work-start" />
+                </div>
+                <div class="input-group">
+                    <label>结束日期</label>
+                    <input type="date" id="work-end" />
+                </div>
+                <button class="btn" onclick="calculateWorkdays()">计算工作日</button>
+                <div class="result" id="work-result">
+                    <div class="result-title">工作日统计</div>
+                    <div class="result-value" id="work-value">0 个工作日</div>
+                    <div class="result-details" id="work-details"></div>
+                </div>
+                <div class="info-box">
+                    💼 不包含周六日,不考虑法定节假日
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setToday(inputId) {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById(inputId).value = today;
+        }
+
+        function setTomorrow(inputId) {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById(inputId).value = tomorrow.toISOString().split('T')[0];
+        }
+
+        function calculateDifference() {
+            const start = new Date(document.getElementById('diff-start').value);
+            const end = new Date(document.getElementById('diff-end').value);
+
+            if (!document.getElementById('diff-start').value || !document.getElementById('diff-end').value) {
+                alert('请选择开始和结束日期');
+                return;
+            }
+
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const diffWeeks = Math.floor(diffDays / 7);
+            const diffMonths = Math.floor(diffDays / 30);
+            const diffYears = Math.floor(diffDays / 365);
+
+            document.getElementById('diff-value').textContent = diffDays + ' 天';
+            document.getElementById('diff-details').innerHTML = `
+                约 ${diffWeeks} 周<br>
+                约 ${diffMonths} 个月<br>
+                约 ${diffYears} 年<br>
+                <br>
+                开始: ${start.toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}<br>
+                结束: ${end.toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            `;
+            document.getElementById('diff-result').classList.add('show');
+        }
+
+        function calculateAddSubtract() {
+            const startDate = new Date(document.getElementById('add-start').value);
+            const operation = document.getElementById('add-operation').value;
+            const number = parseInt(document.getElementById('add-number').value);
+            const unit = document.getElementById('add-unit').value;
+
+            if (!document.getElementById('add-start').value) {
+                alert('请选择起始日期');
+                return;
+            }
+
+            let resultDate = new Date(startDate);
+            const multiplier = operation === 'add' ? 1 : -1;
+
+            switch(unit) {
+                case 'days':
+                    resultDate.setDate(resultDate.getDate() + (number * multiplier));
+                    break;
+                case 'weeks':
+                    resultDate.setDate(resultDate.getDate() + (number * 7 * multiplier));
+                    break;
+                case 'months':
+                    resultDate.setMonth(resultDate.getMonth() + (number * multiplier));
+                    break;
+                case 'years':
+                    resultDate.setFullYear(resultDate.getFullYear() + (number * multiplier));
+                    break;
+            }
+
+            const unitText = {
+                'days': '天',
+                'weeks': '周',
+                'months': '月',
+                'years': '年'
+            };
+
+            document.getElementById('add-value').textContent = resultDate.toLocaleDateString('zh-CN');
+            document.getElementById('add-details').innerHTML = `
+                ${operation === 'add' ? '加上' : '减去'} ${number} ${unitText[unit]}<br>
+                <br>
+                起始日期: ${startDate.toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}<br>
+                结果日期: ${resultDate.toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            `;
+            document.getElementById('add-result').classList.add('show');
+        }
+
+        function quickAdd(days, unit) {
+            setToday('add-start');
+            document.getElementById('add-number').value = days;
+            document.getElementById('add-unit').value = unit;
+            document.getElementById('add-operation').value = 'add';
+            calculateAddSubtract();
+        }
+
+        function calculateAge() {
+            const birthDate = new Date(document.getElementById('special-date').value);
+            if (!document.getElementById('special-date').value) {
+                alert('请选择出生日期');
+                return;
+            }
+
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+
+            const nextBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+            if (nextBirthday < today) {
+                nextBirthday.setFullYear(today.getFullYear() + 1);
+            }
+            const daysToNext = Math.ceil((nextBirthday - today) / (1000 * 60 * 60 * 24));
+
+            document.getElementById('special-value').textContent = age + ' 岁';
+            document.getElementById('special-details').innerHTML = `
+                出生日期: ${birthDate.toLocaleDateString('zh-CN')}<br>
+                距离下个生日还有 ${daysToNext} 天<br>
+                下个生日: ${nextBirthday.toLocaleDateString('zh-CN', { weekday: 'long', month: 'long', day: 'numeric' })}
+            `;
+            document.getElementById('special-result').classList.add('show');
+        }
+
+        function daysUntilBirthday() {
+            const birthDate = new Date(document.getElementById('special-date').value);
+            if (!document.getElementById('special-date').value) {
+                alert('请选择出生日期');
+                return;
+            }
+
+            const today = new Date();
+            const nextBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+            
+            if (nextBirthday < today) {
+                nextBirthday.setFullYear(today.getFullYear() + 1);
+            }
+
+            const daysUntil = Math.ceil((nextBirthday - today) / (1000 * 60 * 60 * 24));
+
+            document.getElementById('special-value').textContent = daysUntil + ' 天';
+            document.getElementById('special-details').innerHTML = `
+                下个生日: ${nextBirthday.toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}<br>
+                约 ${Math.floor(daysUntil / 7)} 周<br>
+                约 ${Math.floor(daysUntil / 30)} 个月
+            `;
+            document.getElementById('special-result').classList.add('show');
+        }
+
+        function daysInYear() {
+            const date = new Date(document.getElementById('special-date').value);
+            if (!document.getElementById('special-date').value) {
+                alert('请选择日期');
+                return;
+            }
+
+            const start = new Date(date.getFullYear(), 0, 0);
+            const diff = date - start;
+            const oneDay = 1000 * 60 * 60 * 24;
+            const dayOfYear = Math.floor(diff / oneDay);
+
+            document.getElementById('special-value').textContent = '第 ' + dayOfYear + ' 天';
+            document.getElementById('special-details').innerHTML = `
+                ${date.getFullYear()} 年的第 ${dayOfYear} 天<br>
+                日期: ${date.toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            `;
+            document.getElementById('special-result').classList.add('show');
+        }
+
+        function weekNumber() {
+            const date = new Date(document.getElementById('special-date').value);
+            if (!document.getElementById('special-date').value) {
+                alert('请选择日期');
+                return;
+            }
+
+            const firstDay = new Date(date.getFullYear(), 0, 1);
+            const days = Math.floor((date - firstDay) / (24 * 60 * 60 * 1000));
+            const weekNum = Math.ceil((days + firstDay.getDay() + 1) / 7);
+
+            document.getElementById('special-value').textContent = '第 ' + weekNum + ' 周';
+            document.getElementById('special-details').innerHTML = `
+                ${date.getFullYear()} 年的第 ${weekNum} 周<br>
+                日期: ${date.toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            `;
+            document.getElementById('special-result').classList.add('show');
+        }
+
+        function calculateWorkdays() {
+            const start = new Date(document.getElementById('work-start').value);
+            const end = new Date(document.getElementById('work-end').value);
+
+            if (!document.getElementById('work-start').value || !document.getElementById('work-end').value) {
+                alert('请选择开始和结束日期');
+                return;
+            }
+
+            let workdays = 0;
+            let weekends = 0;
+            let current = new Date(start);
+
+            while (current <= end) {
+                const dayOfWeek = current.getDay();
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    workdays++;
+                } else {
+                    weekends++;
+                }
+                current.setDate(current.getDate() + 1);
+            }
+
+            const totalDays = workdays + weekends;
+
+            document.getElementById('work-value').textContent = workdays + ' 个工作日';
+            document.getElementById('work-details').innerHTML = `
+                总天数: ${totalDays} 天<br>
+                工作日: ${workdays} 天<br>
+                周末: ${weekends} 天<br>
+                <br>
+                开始: ${start.toLocaleDateString('zh-CN')}<br>
+                结束: ${end.toLocaleDateString('zh-CN')}
+            `;
+            document.getElementById('work-result').classList.add('show');
+        }
+
+        setToday('diff-start');
+        setToday('add-start');
+        setToday('special-date');
+        setToday('work-start');
+    </script>
+</body>
+</html>
